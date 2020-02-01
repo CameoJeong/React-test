@@ -1,44 +1,48 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
+import html2canvas from 'html2canvas'
 
+class Mycanvas extends Component{
 
-
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-//serviceWorker.unregister();
-
-/*class Imagecanvas extends React.Component{
-	render(){
-		return (
-			<img src="1.jpg" width="100" height="50" />
-		)
-	}
-}*/
-
-function onBrowse(){
-    alert("JGS");
-}
-
-class Mycanvas extends React.Component{
+    ctx = null
+    canvas = null
     constructor(props) {
         super(props);
-        //added state 
         this.state={
             isDown: false,
             previousPointX:'',
             previousPointY:'',
-            location:''
+            location:'',
+            imgUrl : '',
         }
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
-        this.handleBrowse = this.handleBrowse.bind(this);
         this.handleUpload = this.handleUpload.bind(this);
         this.handleSave = this.handleSave.bind(this);
+        this.handleClick = this.handleClick.bind(this);
+        this.fileInput = React.createRef();
+    }
+
+    componentDidMount() {
+        var self = this;
+        self.canvas = ReactDOM.findDOMNode(this.refs.canvas);
+        self.ctx = this.canvas.getContext("2d");
+    }
+
+    componentDidUpdate(){
+        this.init()
+    }
+
+    init = () => {
+        var self = this
+        var img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = this.state.imgUrl
+        img.onload = function() {
+            self.ctx.drawImage(img,0,0);
+        }
     }
 
     downloadURI(uri, name) {
@@ -49,20 +53,63 @@ class Mycanvas extends React.Component{
         link.click();
         document.body.removeChild(link);
     }
-    
-    handleBrowse = () => {
-        alert('Browse');
-    }
 
     handleUpload = () => {
         alert('Upload');
     }
 
     handleSave = () => {
-        const canvas = ReactDOM.findDOMNode(this.refs.canvas);
-        const dataURL = canvas.toDataURL();
-        this.downloadURI(dataURL, 'stage.png');
-        alert('Save');
+        var self = this;
+        var canvasPromise  = html2canvas(document.body, {
+            useCORS: true
+        });
+        canvasPromise.then(function() {
+            document.body.appendChild(self.canvas);
+            const dataURL = self.canvas.toDataURL();
+            self.downloadURI(dataURL, 'name.png')
+        });   
+    }
+
+    handleClick = (e) => {
+        this.setState({imgUrl:URL.createObjectURL(e.target.files[0])})
+    }
+
+    handleMouseMove(event){
+
+    }
+
+    handleMouseUp(event){
+        this.setState({
+            isDown: false
+        });
+        if(this.state.isDown){
+            var x = event.offsetX;
+            var y = event.offsetY;
+
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeStyle = "";
+
+            this.ctx.moveTo(this.state.previousPointX,this.state.previousPointY);
+            this.ctx.lineTo(x,y);
+            this.ctx.stroke();
+            this.ctx.closePath();
+        }
+    }
+
+    handleMouseDown(event){
+        console.log(event);    
+        this.setState({
+            isDown: true,
+            previousPointX:event.offsetX,
+            previousPointY:event.offsetY
+        },()=>{       
+            var x = event.offsetX;
+            var y = event.offsetY;
+            console.log(x,y);
+            this.ctx.moveTo(x,y);
+            this.ctx.save();
+            this.ctx.stroke();
+        })
     }
 
     render() {
@@ -86,73 +133,18 @@ class Mycanvas extends React.Component{
                             }}
                 />
                 <br></br>
-                <button onClick={this.handleBrowse}>
-                    Browse
-                </button>
+                
+                <input type="file" id="file" ref={this.fileInput} onChange = { this.handleClick }/>
+
                 <button onClick={this.handleUpload}>
                     Upload
                 </button>
+                
                 <button onClick={this.handleSave}>
                     Save
                 </button>
             </div>    
         );
-    }
-
-    handleMouseMove(event){
-
-    }
-    handleMouseUp(event){
-        this.setState({
-            isDown: false
-        });
-        if(this.state.isDown){
-            const canvas = ReactDOM.findDOMNode(this.refs.canvas);
-            var x = event.offsetX;
-            var y = event.offsetY;
-            var ctx = canvas.getContext("2d");
-
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = "";
-
-            ctx.moveTo(this.state.previousPointX,this.state.previousPointY);
-            ctx.lineTo(x,y);
-            ctx.stroke();
-            ctx.closePath();
-        }
-    }
-
- 
-
-    handleMouseDown(event){ //added code here
-        console.log(event);    
-        this.setState({
-            isDown: true,
-            previousPointX:event.offsetX,
-            previousPointY:event.offsetY
-        },()=>{    
-            const canvas = ReactDOM.findDOMNode(this.refs.canvas);    
-            var x = event.offsetX;
-            var y = event.offsetY;
-            var ctx = canvas.getContext("2d");
-            console.log(x,y);
-            ctx.moveTo(x,y);
-            // ctx.lineTo(x+1,y+1);
-            // ctx.stroke();
-        })
-    }
-    
-    componentDidMount() {
-        const canvas = ReactDOM.findDOMNode(this.refs.canvas);
-        const ctx = canvas.getContext("2d");
-        //ctx.fillStyle = 'rgb(200,255,255)';
-        //ctx.fillRect(0, 0, 640, 425);
-        var img = new Image();
-        img.src = 'https://s-media-cache-ak0.pinimg.com/236x/d7/b3/cf/d7b3cfe04c2dc44400547ea6ef94ba35.jpg'
-        img.onload = function() {
-            ctx.drawImage(img,0,0);
-        }
-        ctx.closePath();
     }
 }
 

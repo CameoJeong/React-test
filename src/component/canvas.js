@@ -57,10 +57,11 @@ class Canvas extends Component{
     const dataURL = self.canvas.toDataURL();
     axios.post('http://localhost:81/uploadApi/upload.php', { image : dataURL }, {'Content-Type' : 'application/json'})
       .then(res => {
-          console.log('===TEMP res = ', res);
-          // if(res.status == 'success'){
-            this.setState({sweetAlertMessage : <SweetAlert success title='Picture is uploaded Successfuly!' onConfirm = {this.closeAlert}/>})
-          // }
+          if(res.status == 'success'){
+            self.setState({sweetAlertMessage : <SweetAlert success title='Picture is uploaded Successfuly!' onConfirm = {self.closeAlert}/>})
+          } else {
+            self.setState({sweetAlertMessage : <SweetAlert success title='Picture is uploaded Failed!' onConfirm = {self.closeAlert}/>})
+          }
       });
     }); 
   }
@@ -94,6 +95,8 @@ class Canvas extends Component{
       if(!!e.target.files[0]){
         img.src = URL.createObjectURL(e.target.files[0])
         img.onload = function() {
+          self.canvas.width = img.width;
+          self.canvas.height = img.height;
           self.ctx.drawImage(img, 0, 0, img.width,  img.height)
         }
       }
@@ -113,8 +116,9 @@ class Canvas extends Component{
       var y = event.offsetY
 
       if(!!x && !!y){
-        this.ctx.lineWidth = 1
-        this.ctx.strokeStyle = ""
+
+        this.ctx.beginPath();
+        this.ctx.lineWidth = 3;
   
         this.ctx.moveTo(this.state.previousPointX,this.state.previousPointY);
         this.ctx.lineTo(x,y);
@@ -131,14 +135,13 @@ class Canvas extends Component{
       previousPointX:event.offsetX,
       previousPointY:event.offsetY
     },()=>{       
-      var x = event.offsetX
+      /*var x = event.offsetX
       var y = event.offsetY
-      console.log(x,y)
       if(!!x && !!y){
         self.ctx.moveTo(x,y)
         self.ctx.save()
         self.ctx.stroke()
-      }
+      }*/
     })
   }
 
@@ -174,17 +177,20 @@ class Canvas extends Component{
             <input type="file" ref={this.fileInput} style={{display:"none"}} onChange = {this.onChangeFile}/>
             <Button variant="dark" onClick={this.handleOpenBtClick}>Open</Button>
           </div>
+          
+          <div className = 'each-button'>
+            <Button variant="dark" onClick={this.handleSave}>
+                Save
+            </Button>
+          </div>
+
           <div className = 'each-button'>
             <Button variant="dark" onClick={this.handleUpload}>
                 Upload
             </Button>
           </div>
 
-          <div className = 'each-button'>
-            <Button variant="dark" onClick={this.handleSave}>
-                Save
-            </Button>
-          </div>
+          
         </div>
       </div>    
     );
